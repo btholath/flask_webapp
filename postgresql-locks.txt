@@ -131,3 +131,30 @@ This will return the IDs of all rows that are not currently locked.
 Please replace id, your_table, and condition1, condition2, and condition3 with your actual column name, table name, and conditions respectively.
 
 Remember to always handle locks with care to prevent deadlocks and maintain the performance of your database. If you’re new to PostgreSQL or not sure about something, it’s a good idea to test on a non-production database first. Let me know if you need more help! 😊
+
+
+
+Postgresql SQL script to test the row level locking
+
+Sure, here’s a simple SQL script that demonstrates row-level locking in PostgreSQL:
+
+-- Start a transaction
+BEGIN;
+
+-- Select a row for update, which locks the row
+SELECT * FROM your_table WHERE your_condition FOR UPDATE;
+
+-- At this point, other transactions cannot update or delete the locked row
+
+-- Update the row
+UPDATE your_table SET your_column = 'new_value' WHERE your_condition;
+
+-- Commit the transaction, which releases the lock
+COMMIT;
+In this script, replace your_table with the name of your table, your_condition with the condition that identifies the row you want to lock, and your_column with the name of the column you want to update.
+
+This script starts a transaction, locks a row in the table, updates the row, and then commits the transaction. While the row is locked, other transactions cannot update or delete it.
+
+Please note that this is a very basic example. In a real-world scenario, you would need to handle potential issues such as deadlocks and lock contention. Let me know if you need more help! 
+
+
