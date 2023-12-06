@@ -1,0 +1,138 @@
+AWS EventBus Python Lambda  SQS
+
+AWS Lambda, Amazon Simple Queue Service (SQS), and Amazon EventBridge (formerly known as AWS EventBus) can be used together to build powerful serverless and event-driven architectures123.
+
+In a typical setup:
+
+An event triggers your Lambda function. This could be an HTTP request via API Gateway, a message arriving in an SQS queue, or a custom event you’ve defined
+
+Your Lambda function executes your code. If necessary, it can interact with other AWS services, like putting messages on an SQS queue
+
+If you’re using EventBridge, your Lambda function can put events on an event bus3. Other services or applications can then react to these events.
+
+Here’s a basic example of how you can use boto3, the AWS SDK for Python, to interact with SQS and Lambda
+
+import boto3
+
+# Initialize a client for SQS and Lambda
+sqs = boto3.client('sqs')
+lambda_client = boto3.client('lambda')
+
+# Specify your SQS queue URL
+queue_url = 'https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue'
+
+# Send a message to the SQS queue
+response = sqs.send_message(
+    QueueUrl=queue_url,
+    MessageBody='Hello from Lambda!'
+)
+
+# Invoke a Lambda function
+response = lambda_client.invoke(
+    FunctionName='MyLambdaFunction',
+    InvocationType='RequestResponse',
+    Payload=b'{}'
+)
+In this example, replace 'https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue' with your actual SQS queue URL, and 'MyLambdaFunction' with the name of your Lambda function2.
+
+Remember to handle any exceptions that might occur during the invocation of the Lambda function or interaction with SQS12.
+
+Let me know if you need more help! 
+
+When working with AWS EventBridge in Python, you might encounter various types of errors. Here are some common ones and how you can handle them:
+
+Client Errors: These are errors resulting from configuration or code managed by the user. These types of errors can include issues such as insufficient permissions on the pipe to invoke the target, or a logic error in a synchronously-invoked customer Lambda, Step Functions, API destination, or API Gateway endpoint1. For these errors, EventBridge Pipes retries up to the maximum retry times configured on the pipe retry policy or until the maximum record age expires, whichever comes first1.
+
+Internal Errors: These are errors resulting from aspects of the invocation managed by the EventBridge Pipes service. These types of errors can include issues such as an HTTP connection failure when attempting to invoke the customer target service or a transient drop in availability on the pipe service itself1. In general, EventBridge Pipes retries internal errors an indefinite number of times, and stops only when the record expires in the source1.
+
+Boto3 Errors: When using the boto3 library to interact with AWS services, you might encounter exceptions such as EndpointConnectionError, NoCredentialsError, PartialCredentialsError, SSLError, ClientError, ParamValidationError, and WaiterError. You can handle these exceptions using a try/except block in your code2.
+
+Here’s an example of how you can handle exceptions when invoking an EventBridge:
+
+Python
+AI-generated code. Review and use carefully. More info on FAQ.
+
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
+
+# Initialize a client for EventBridge
+client = boto3.client('events')
+
+# Define your event
+event = {
+    'Source': 'com.mycompany.myapp',
+    'DetailType': 'myapp.myevent',
+    'Detail': '{"key1": "value1", "key2": "value2"}'
+}
+
+# Try to put the event
+try:
+    response = client.put_events(
+        Entries=[event]
+    )
+except (BotoCoreError, ClientError) as error:
+    print(f"An error occurred: {error}")
+In this example, the put_events call is wrapped in a try/except block that catches BotoCoreError and ClientError exceptions. If an exception occurs, the script prints an error message2.
+
+Remember, it’s important to handle these exceptions in your code to ensure your application can recover gracefully from errors21. Let me know if you need more help! 
+
+When using AWS Lambda and Amazon SQS together in Python, you might encounter various types of errors. Here are some common ones and how you can handle them:
+
+Lambda Errors: These are errors that occur within your Lambda function. If your function throws an exception, AWS Lambda recognizes the failure and sends the same batch of records to your function again until processing succeeds or the records expire1. To prevent Lambda from processing a message multiple times, you can either configure your event source mapping to include batch item failures in your function response, or you can use the Amazon SQS API action DeleteMessage to remove messages from the queue as your Lambda function successfully processes them1.
+
+SQS Errors: These are errors that occur when interacting with the SQS service. For example, if you exceed the maximum number of in-flight messages for a queue, additional ReceiveMessage requests might return fewer messages than specified in the MaxNumberOfMessages parameter1.
+
+Boto3 Errors: When using the boto3 library to interact with AWS services, you might encounter exceptions such as EndpointConnectionError, NoCredentialsError, PartialCredentialsError, SSLError, ClientError, ParamValidationError, and WaiterError. You can handle these exceptions using a try/except block in your code1.
+
+Here’s an example of how you can handle exceptions when invoking a Lambda function and interacting with an SQS queue:
+
+Python
+AI-generated code. Review and use carefully. More info on FAQ.
+
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
+
+# Initialize a client for Lambda and SQS
+lambda_client = boto3.client('lambda')
+sqs = boto3.client('sqs')
+
+# Specify your SQS queue URL
+queue_url = 'https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue'
+
+# Define a function to invoke a Lambda function and interact with an SQS queue
+def process_message():
+    try:
+        # Receive a message from the SQS queue
+        response = sqs.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=1)
+        
+        # Check if a message was received
+        if 'Messages' in response:
+            # Get the first message
+            message = response['Messages'][0]
+            
+            # Invoke the Lambda function
+            lambda_response = lambda_client.invoke(
+                FunctionName='MyLambdaFunction',
+                InvocationType='RequestResponse',
+                Payload=message['Body']
+            )
+            
+            # Delete the message from the queue
+            sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=message['ReceiptHandle'])
+    except (BotoCoreError, ClientError) as error:
+        print(f"An error occurred: {error}")
+
+# Process a message
+process_message()
+In this example, replace 'https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue' with your actual SQS queue URL, and 'MyLambdaFunction' with the name of your Lambda function1. This script receives a message from the specified SQS queue, invokes the specified Lambda function with the message as the payload, and then deletes the message from the queue1. If an exception occurs, the script prints an error message1.
+
+Remember, it’s important to handle these exceptions in your code to ensure your application can recover gracefully from errors1. Let me know if you need more help! 😊
+
+Learn more:
+
+1. docs.aws.amazon.com
+2. stackoverflow.com
+3. stackoverflow.com
+4. serverless.com
+5. enrico-portolan.medium.com
++3 more
